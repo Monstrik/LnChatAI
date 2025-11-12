@@ -123,70 +123,113 @@
         return root || document;
     }
 
-    // Sending a reply: fill composer and click send
+    // Sending a reply: fill composer and send in a way that updates LinkedIn's internal state
     async function sendReply(text) {
         const scope = findActiveComposerRoot();
         // Find composer contenteditable (full + overlay)
-        const editable = scope.querySelector('div.msg-form__contenteditable[contenteditable="true"], div[role="textbox"].msg-form__contenteditable, .msg-overlay-conversation-bubble div[role="textbox"][contenteditable="true"], [data-test-conversation-compose-box] [contenteditable="true"]');
+        const editable = scope.querySelector('div.msg-form__contenteditable[contenteditable="true"], div[role="textbox"].msg-form__contenteditable, .msg-overlay-conversation-bubble div[role="textbox"][contenteditable="true"], [data-test-conversation-compose-box] [contenteditable="true"], div[contenteditable="true"][data-placeholder]');
         if (!editable) throw new Error('Composer not found');
 
         // Helpers
         const wait = (ms) => new Promise(r => setTimeout(r, ms));
         const isDisabled = (btn) => btn.hasAttribute('disabled') || btn.getAttribute('aria-disabled') === 'true' || btn.classList.contains('artdeco-button--disabled');
+        const isVisible = (el) => !!(el && el.offsetParent !== null);
 
         // Focus editor
         editable.focus();
 
-        // Clear existing content robustly
+        // Ensure selection is inside the editor
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(editable);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+
+        // Clear existing content ONLY via editing commands/events (avoid innerHTML to not fight React/Draft)
         try { document.execCommand('selectAll', false, null); } catch (e) {}
         try { document.execCommand('delete', false, null); } catch (e) {}
-        try { document.execCommand('insertText', false, ''); } catch (e) {}
-        editable.innerHTML = '';
+        // Some builds need a small delay for placeholder/state to settle
+        await wait(20);
 
-        // Try to insert via execCommand first (recognized by many editors)
-        let inserted = false;
-        try {
-            inserted = document.execCommand('insertText', false, text);
-        } catch (e) {
-            inserted = false;
+        // Insert the text using execCommand in chunks; if it returns false, fall back to dispatching input events
+        const chunks = String(text).split(/\n/);
+        let usedExec = false;
+        for (let i = 0; i < chunks.length; i++) {
+            const part = chunks[i];
+            if (part) {
+                try {
+                    const ok = document.execCommand('insertText', false, part);
+                    usedExec = usedExec || ok;
+                } catch (e) {}
+            }
+            if (i < chunks.length - 1) {
+                // new line
+                try {
+                    const okNL = document.execCommand('insertParagraph');
+                    usedExec = usedExec || okNL;
+                } catch (e) {}
+            }
+            await wait(0); // yield to event loop
         }
 
-        if (!inserted) {
-            // Fallback: set HTML paragraphs so placeholder is removed
-            const escapeHtml = (s) => String(s)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            const html = String(text).split(/\n/).map(p => `<p>${escapeHtml(p) || '<br>'}</p>`).join('');
-            editable.innerHTML = html || '<p><br></p>';
+        if (!usedExec) {
+            // Fallback: synthesize beforeinput/input which many React editors listen to
+            const data = text;
+            try {
+                editable.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, data, inputType: 'insertFromPaste' }));
+            } catch (e) {}
+            try {
+                editable.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, data, inputType: 'insertFromPaste' }));
+            } catch (e) {
+                // very old engines: fall back to a quick paste-like sequence
+                const evt = new Event('input', { bubbles: true });
+                editable.dispatchEvent(evt);
+            }
         }
 
-        // Dispatch events to notify LinkedIn/React of change
-        editable.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, data: text, inputType: inserted ? 'insertText' : 'insertFromPaste' }));
+        // Give LinkedIn a moment to compute editor state and enable send button
         editable.dispatchEvent(new Event('change', { bubbles: true }));
         editable.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }));
+        await wait(50);
 
-        // Find Send button
-        let sendBtn = scope.querySelector('button.msg-form__send-button, button[aria-label="Send"], .msg-overlay-conversation-bubble button[aria-label="Send"], form.msg-form__form button[type="submit"]');
+        // Verify content did not get wiped by a React re-render; retry once if needed
+        const currentText = (editable.innerText || editable.textContent || '').trim();
+        if (!currentText) {
+            // Retry once by re-focusing and re-inserting with execCommand only
+            editable.focus();
+            try { document.execCommand('insertText', false, text); } catch (e) {}
+            editable.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, data: text, inputType: 'insertText' }));
+            await wait(80);
+        }
+
+        // Find a visible Send button
+        let sendBtn = Array.from(scope.querySelectorAll('button.msg-form__send-button, button[aria-label="Send"], .msg-overlay-conversation-bubble button[aria-label="Send"], form.msg-form__form button[type="submit"]'))
+            .filter(isVisible)
+            .pop() || null;
         if (!sendBtn) throw new Error('Send button not found');
 
-        // Wait for enablement briefly
-        for (let i = 0; i < 10; i++) {
+        // Wait up to ~1.5s for enablement
+        for (let i = 0; i < 15; i++) {
             if (!isDisabled(sendBtn)) break;
+            // Nudge editor to notify frameworks
+            editable.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }));
+            editable.dispatchEvent(new Event('input', { bubbles: true }));
             await wait(100);
         }
 
-        if (isDisabled(sendBtn)) {
-            // Try sending via Enter key
-            const fire = (type) => editable.dispatchEvent(new KeyboardEvent(type, { key: 'Enter', code: 'Enter', which: 13, keyCode: 13, bubbles: true }));
-            fire('keydown');
-            fire('keypress');
-            fire('keyup');
-            await wait(150);
-        }
+        // Prefer Enter-to-send while editor is focused (matches LinkedIn behavior)
+        editable.focus();
+        const fire = (type) => editable.dispatchEvent(new KeyboardEvent(type, { key: 'Enter', code: 'Enter', which: 13, keyCode: 13, bubbles: true }));
+        fire('keydown');
+        fire('keypress');
+        fire('keyup');
+        await wait(120);
 
-        // Click send (works whether disabled attribute is respected or not)
-        sendBtn.click();
+        // If still not sent (button remains), click the button
+        if (document.body.contains(sendBtn)) {
+            sendBtn.click();
+        }
     }
 
     // Listen for commands from background/popup
