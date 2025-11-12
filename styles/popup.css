@@ -2,7 +2,7 @@
 
 body {
   margin: 12px;
-  width: 360px;
+  width: 350px;
 }
 
 h1 {
@@ -52,4 +52,26 @@ input[type="text"]#incomingMeta {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px;
+}
+
+
+/* Title line layout: icon + From label + input on one line */
+.row.title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.row.title-line img {
+  flex: 0 0 auto;
+}
+
+.label-inline {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.row.title-line #incomingMeta {
+  flex: 1 1 auto;
 }
