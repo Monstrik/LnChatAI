@@ -146,6 +146,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   qs('#approveSend').addEventListener('click', approveAndSend);
   qs('#sendNow').addEventListener('click', sendNowNoConfirm);
   qs('#autoSendToggle').addEventListener('change', (e) => saveAutoSend(e.target.checked));
-  const insertBtn = qs('#insertTemplate');
-  if (insertBtn) insertBtn.addEventListener('click', insertSelectedTemplate);
+  const selTpl = qs('#templateSelect');
+  if (selTpl) selTpl.addEventListener('change', insertSelectedTemplate);
 });
