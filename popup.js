@@ -106,8 +106,21 @@ async function approveAndSend() {
   const tabId = await getActiveTabId();
   const text = qs('#reply').value.trim();
   if (!text) return setStatus('Reply is empty', false);
-  const res = await chrome.runtime.sendMessage({ type: 'SEND_REPLY_NOW', text, tabId });
-  setStatus(res?.ok ? 'Sent' : 'Failed to send', !!res?.ok);
+  const btns = [qs('#approveSend'), qs('#sendNow')].filter(Boolean);
+  btns.forEach(b => b.disabled = true);
+  try {
+    const res = await chrome.runtime.sendMessage({ type: 'SEND_REPLY_NOW', text, tabId });
+    const ok = !!res?.ok;
+    setStatus(ok ? 'Sent' : 'Failed to send', ok);
+    if (ok) {
+      setTimeout(() => window.close(), 250);
+    } else {
+      btns.forEach(b => b.disabled = false);
+    }
+  } catch (e) {
+    setStatus('Failed to send', false);
+    btns.forEach(b => b.disabled = false);
+  }
 }
 
 async function sendNowNoConfirm() {
@@ -115,12 +128,26 @@ async function sendNowNoConfirm() {
   const tabId = await getActiveTabId();
   const incoming = qs('#incomingContent').value.trim();
   if (!incoming) return setStatus('No message content to process', false);
-  const proposal = await chrome.runtime.sendMessage({ type: 'RUN_RULES_ON_TEXT', text: incoming, tabId });
-  if (proposal?.ok) {
-    const res = await chrome.runtime.sendMessage({ type: 'SEND_REPLY_NOW', text: proposal.proposal.reply, tabId });
-    setStatus(res?.ok ? `Sent via rule: ${proposal.proposal.rule}` : 'Failed to send', !!res?.ok);
-  } else {
-    setStatus('Rules failed', false);
+  const btns = [qs('#approveSend'), qs('#sendNow')].filter(Boolean);
+  btns.forEach(b => b.disabled = true);
+  try {
+    const proposal = await chrome.runtime.sendMessage({ type: 'RUN_RULES_ON_TEXT', text: incoming, tabId });
+    if (proposal?.ok) {
+      const res = await chrome.runtime.sendMessage({ type: 'SEND_REPLY_NOW', text: proposal.proposal.reply, tabId });
+      const ok = !!res?.ok;
+      setStatus(ok ? `Sent via rule: ${proposal.proposal.rule}` : 'Failed to send', ok);
+      if (ok) {
+        setTimeout(() => window.close(), 250);
+      } else {
+        btns.forEach(b => b.disabled = false);
+      }
+    } else {
+      setStatus('Rules failed', false);
+      btns.forEach(b => b.disabled = false);
+    }
+  } catch (e) {
+    setStatus('Failed to send', false);
+    btns.forEach(b => b.disabled = false);
   }
 }
 
