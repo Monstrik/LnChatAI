@@ -32,3 +32,24 @@ textarea {
 .row > * {
   flex: 1;
 }
+
+/* Increased height for message content area */
+#incomingContent {
+  min-height: 180px;
+}
+
+/* Ensure two-column row (From + Reply) shares space nicely */
+.section.row > div {
+  flex: 1;
+}
+
+
+/* Single-line From input styling */
+input[type="text"]#incomingMeta {
+  width: 100%;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+}

@@ -8,9 +8,24 @@ function setStatus(msg, ok=true) {
   el.className = ok ? 'small ok' : 'small err';
 }
 
+let templatesCache = [];
+
 async function getActiveTabId() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   return tabs[0]?.id;
+}
+
+function populateTemplateSelect(templates) {
+  const sel = qs('#templateSelect');
+  if (!sel) return;
+  // Clear, keep placeholder
+  sel.innerHTML = '<option value="">Choose template…</option>';
+  (templates || []).forEach((t, idx) => {
+    const opt = document.createElement('option');
+    opt.value = String(idx);
+    opt.textContent = t.title || `Template ${idx+1}`;
+    sel.appendChild(opt);
+  });
 }
 
 async function refreshFromPage() {
@@ -60,6 +75,8 @@ async function loadConfig() {
   const cfg = res?.config;
   if (cfg) {
     qs('#autoSendToggle').checked = !!cfg.autoSend;
+    templatesCache = Array.isArray(cfg.templates) ? cfg.templates : [];
+    populateTemplateSelect(templatesCache);
   }
 }
 
@@ -107,6 +124,18 @@ async function sendNowNoConfirm() {
   }
 }
 
+function insertSelectedTemplate() {
+  const sel = qs('#templateSelect');
+  if (!sel) return;
+  const idx = parseInt(sel.value, 10);
+  if (Number.isNaN(idx)) return;
+  const tpl = templatesCache[idx];
+  if (!tpl) return;
+  const area = qs('#reply');
+  area.value = tpl.content || '';
+  setStatus(tpl.title ? `Template applied: ${tpl.title}` : 'Template applied');
+}
+
 // Wire up events
 window.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
@@ -117,4 +146,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   qs('#approveSend').addEventListener('click', approveAndSend);
   qs('#sendNow').addEventListener('click', sendNowNoConfirm);
   qs('#autoSendToggle').addEventListener('change', (e) => saveAutoSend(e.target.checked));
+  const insertBtn = qs('#insertTemplate');
+  if (insertBtn) insertBtn.addEventListener('click', insertSelectedTemplate);
 });

@@ -10,6 +10,10 @@ export const DEFAULT_CONFIG = {
     missingJobDesc: "Please share the job description and salary range.",
     fallback: "Thanks for reaching out. Could you share the job description and salary range?",
   },
+  templates: [
+    { title: "Thanks + JD Request", content: "Thanks for reaching out. Could you please share the job description and salary range?" },
+    { title: "NYC/Remote Only", content: "Thanks! I am currently considering roles in NYC or fully remote only." },
+  ],
   autoSend: false,
   useAI: false,
   aiApiKey: "",

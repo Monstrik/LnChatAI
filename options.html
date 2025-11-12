@@ -35,15 +35,20 @@
 
   <div class="row" style="margin-top:12px;">
     <div>
+      <h2>Templates</h2>
+      <div class="small">Create reusable reply templates with title and content. These appear in the popup for quick insertion.</div>
+      <div id="templates"></div>
+      <button id="addTemplate" style="margin-top:8px;">Add Template</button>
+    </div>
+
+    <div>
       <h2>AI Settings</h2>
       <label><input type="checkbox" id="useAI" /> Use AI model when rules don't match</label>
       <label style="margin-top:8px;">AI API Key</label>
       <input id="aiApiKey" type="text" placeholder="sk-..." />
       <div class="small">AI is optional; not invoked by default in this version.</div>
-    </div>
 
-    <div>
-      <h2>Behavior</h2>
+      <h2 style="margin-top:16px;">Behavior</h2>
       <label><input type="checkbox" id="autoSend" /> Auto-send replies</label>
       <div class="small">When enabled, replies are sent automatically when new messages arrive.</div>
     </div>

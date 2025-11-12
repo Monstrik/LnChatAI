@@ -10,10 +10,10 @@
 
   <img src="icons/icon-32.png" height="32" width="32" alt="IA"/>
 
+
   <div class="section">
     <div class="label">From</div>
-    <label for="incomingMeta">
-    </label><textarea id="incomingMeta" readonly placeholder="Message sender, time."></textarea>
+    <input type="text" id="incomingMeta" readonly placeholder="Message sender, time." />
   </div>
 
   <div class="section">
@@ -22,7 +22,13 @@
   </div>
 
   <div class="section">
-    <div class="label">Proposed reply</div>
+    <div class="label">Reply</div>
+    <div class="row" style="margin-bottom:6px; align-items:center;">
+      <select id="templateSelect">
+        <option value="">Choose template…</option>
+      </select>
+      <button id="insertTemplate">Insert</button>
+    </div>
     <textarea id="reply"></textarea>
     <div class="small" id="ruleNote"></div>
   </div>
