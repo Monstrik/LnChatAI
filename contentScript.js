@@ -127,26 +127,65 @@
     async function sendReply(text) {
         const scope = findActiveComposerRoot();
         // Find composer contenteditable (full + overlay)
-        const editable = scope.querySelector('div.msg-form__contenteditable[contenteditable="true"], div[role="textbox"].msg-form__contenteditable, .msg-overlay-conversation-bubble div[role="textbox"][contenteditable="true"]');
+        const editable = scope.querySelector('div.msg-form__contenteditable[contenteditable="true"], div[role="textbox"].msg-form__contenteditable, .msg-overlay-conversation-bubble div[role="textbox"][contenteditable="true"], [data-test-conversation-compose-box] [contenteditable="true"]');
         if (!editable) throw new Error('Composer not found');
 
-        // Focus and set text
+        // Helpers
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const isDisabled = (btn) => btn.hasAttribute('disabled') || btn.getAttribute('aria-disabled') === 'true' || btn.classList.contains('artdeco-button--disabled');
+
+        // Focus editor
         editable.focus();
-        // Clear existing
-        document.execCommand('selectAll', false, null);
-        document.execCommand('insertText', false, '');
 
-        // Insert new text via input event for React editors
-        const setViaInput = () => {
-            const evt = new InputEvent('input', {bubbles: true, cancelable: true, data: text, inputType: 'insertText'});
-            editable.textContent = text;
-            editable.dispatchEvent(evt);
-        };
-        setViaInput();
+        // Clear existing content robustly
+        try { document.execCommand('selectAll', false, null); } catch (e) {}
+        try { document.execCommand('delete', false, null); } catch (e) {}
+        try { document.execCommand('insertText', false, ''); } catch (e) {}
+        editable.innerHTML = '';
 
-        // Click Send button (search within scope)
-        const sendBtn = scope.querySelector('button.msg-form__send-button, button[aria-label="Send"], .msg-overlay-conversation-bubble button[aria-label="Send"]');
+        // Try to insert via execCommand first (recognized by many editors)
+        let inserted = false;
+        try {
+            inserted = document.execCommand('insertText', false, text);
+        } catch (e) {
+            inserted = false;
+        }
+
+        if (!inserted) {
+            // Fallback: set HTML paragraphs so placeholder is removed
+            const escapeHtml = (s) => String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            const html = String(text).split(/\n/).map(p => `<p>${escapeHtml(p) || '<br>'}</p>`).join('');
+            editable.innerHTML = html || '<p><br></p>';
+        }
+
+        // Dispatch events to notify LinkedIn/React of change
+        editable.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, data: text, inputType: inserted ? 'insertText' : 'insertFromPaste' }));
+        editable.dispatchEvent(new Event('change', { bubbles: true }));
+        editable.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }));
+
+        // Find Send button
+        let sendBtn = scope.querySelector('button.msg-form__send-button, button[aria-label="Send"], .msg-overlay-conversation-bubble button[aria-label="Send"], form.msg-form__form button[type="submit"]');
         if (!sendBtn) throw new Error('Send button not found');
+
+        // Wait for enablement briefly
+        for (let i = 0; i < 10; i++) {
+            if (!isDisabled(sendBtn)) break;
+            await wait(100);
+        }
+
+        if (isDisabled(sendBtn)) {
+            // Try sending via Enter key
+            const fire = (type) => editable.dispatchEvent(new KeyboardEvent(type, { key: 'Enter', code: 'Enter', which: 13, keyCode: 13, bubbles: true }));
+            fire('keydown');
+            fire('keypress');
+            fire('keyup');
+            await wait(150);
+        }
+
+        // Click send (works whether disabled attribute is respected or not)
         sendBtn.click();
     }
 
