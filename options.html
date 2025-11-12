@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LinkedIn Auto-Responder Options</title>
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/options.css">
+</head>
+<body>
+  <h1>LinkedIn Auto-Responder — Options</h1>
+
+  <div class="row">
+    <div>
+      <h2>Keywords</h2>
+      <label>Location Keywords (comma separated)</label>
+      <input id="locationKeywords" type="text" placeholder="new york, nyc, remote" />
+      <label style="margin-top:8px;">Job Description Keywords (comma separated)</label>
+      <input id="jobDescKeywords" type="text" placeholder="position, role, responsibility, requirement, job" />
+      <label style="margin-top:8px;">Salary Keywords (comma separated)</label>
+      <input id="salaryKeywords" type="text" placeholder="salary, range, compensation, pay, rate" />
+    </div>
+
+    <div>
+      <h2>Replies</h2>
+      <label>Location Filter Reply</label>
+      <textarea id="replyLocation" placeholder="NYC or REMOTE only."></textarea>
+      <label style="margin-top:8px;">Salary Inquiry Reply</label>
+      <textarea id="replySalary" placeholder="What is the salary range?"></textarea>
+      <label style="margin-top:8px;">Missing Job Description Reply</label>
+      <textarea id="replyMissing" placeholder="Please share the job description and salary range."></textarea>
+      <label style="margin-top:8px;">Fallback Reply</label>
+      <textarea id="replyFallback" placeholder="Thanks for reaching out... "></textarea>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:12px;">
+    <div>
+      <h2>AI Settings</h2>
+      <label><input type="checkbox" id="useAI" /> Use AI model when rules don't match</label>
+      <label style="margin-top:8px;">AI API Key</label>
+      <input id="aiApiKey" type="text" placeholder="sk-..." />
+      <div class="small">AI is optional; not invoked by default in this version.</div>
+    </div>
+
+    <div>
+      <h2>Behavior</h2>
+      <label><input type="checkbox" id="autoSend" /> Auto-send replies</label>
+      <div class="small">When enabled, replies are sent automatically when new messages arrive.</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="save">Save</button>
+    <button id="reset">Reset to Defaults</button>
+    <div id="status" class="small" style="margin-left:auto;"></div>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

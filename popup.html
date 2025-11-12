@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LinkedIn Auto-Responder</title>
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+  <h1>LinkedIn Auto-Responder</h1>
+
+  <div class="section">
+    <div class="label">From</div>
+    <textarea id="incomingMeta" readonly placeholder="Message meta (e.g., sender, time)..."></textarea>
+  </div>
+
+  <div class="section">
+    <div class="label">Message</div>
+    <textarea id="incomingContent" readonly placeholder="Open a LinkedIn conversation..."></textarea>
+  </div>
+
+  <div class="section">
+    <div class="label">Proposed reply</div>
+    <textarea id="reply"></textarea>
+    <div class="small" id="ruleNote"></div>
+  </div>
+
+  <div class="section row">
+    <button id="refresh">Refresh</button>
+    <button id="propose">Run Rules</button>
+  </div>
+
+  <div class="section row">
+    <button id="approveSend">Approve & Send</button>
+    <button id="sendNow">Run Rule & Send (no confirm)</button>
+  </div>
+
+  <div class="section">
+    <label><input type="checkbox" id="autoSendToggle" /> Auto-send replies</label>
+    <a href="options.html" target="_blank" style="float:right">Options</a>
+  </div>
+
+  <div class="section small" id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

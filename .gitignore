@@ -1,0 +1,43 @@
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+/dist/
+/build/
+/out/
+/temp/
+/tmp/
+.cache/
+
+# Tests/coverage
+/coverage/
+/.nyc_output/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editors/IDE
+.vscode/
+.idea/
+
+# Chrome extension artifacts
+extension/.env
+extension/*.pem
+extension/packaged-*.zip
+
+# Logs and misc
+*.log
+*.local

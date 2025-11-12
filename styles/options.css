@@ -1,0 +1,53 @@
+/* styles/options.css - options page specific layout and components */
+
+body {
+  margin: 16px;
+  max-width: 720px;
+}
+
+h1 {
+  font-size: 18px;
+}
+
+h2 {
+  font-size: 14px;
+  margin-top: 18px;
+}
+
+textarea {
+  min-height: 60px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.row > div {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  /* buttons inherit base styles; sizing here */
+  padding: 8px 10px;
+}
+
+.actions #status {
+  margin-left: auto;
+}

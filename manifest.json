@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "LnChatAI - Smart AI Assistant for LinkedIn Messages",
+  "version": "0.1.1",
+  "description": "LnChatAI helps you write, reply, and manage your LinkedIn messages instantly using AI. Save time, sound professional, and stay connected effortlessly.",
+  "long_description": "LnChatAI is your personal messaging assistant for LinkedIn. It analyzes your conversations, suggests replies, and helps you stay responsive — all without leaving LinkedIn. Whether you're networking or job hunting, LnChatAI keeps your chats fast, friendly, and on point.",
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "LinkedIn Auto-Responder",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
