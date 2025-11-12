@@ -14,6 +14,7 @@ export const DEFAULT_CONFIG = {
     { title: "JD & Salary?", content: "Thanks for reaching out. Could you please share the job description and salary range?" },
     { title: "Salary range?", content: "What is the salary range for this position?" },
     { title: "Remote?", content: "Is this a remote position?" },
+    { title: "Email", content: "Looking.For.The.Best.Job@gmail.com" },
     { title: "Online Resume", content: "Download my updated resume here: https://tinyurl.com/alex-online-resume" },
 
     { title: "Targeting $100/h on W2", content: "Targeting $100/h on W2" },

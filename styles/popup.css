@@ -75,3 +75,24 @@ input[type="text"]#incomingMeta {
 .row.title-line #incomingMeta {
   flex: 1 1 auto;
 }
+
+/* Layout safety: contain widths in popup */
+* , *::before, *::after { box-sizing: border-box; }
+
+/* prevent horizontal overflow in the small popup */
+body { overflow-x: hidden; }
+
+/* form controls should never exceed the popup width */
+textarea,
+input[type="text"],
+select,
+button { max-width: 100%; }
+
+/* allow flex children to shrink instead of causing overflow */
+.row > * { min-width: 0; }
+
+/* ensure title line input can shrink within the row */
+.row.title-line #incomingMeta { min-width: 0; }
+
+/* make template select use full row width for stability */
+#templateSelect { width: 100%; }
