@@ -139,3 +139,10 @@ Stub icons are included in `icons/` as `icon-16.png`, `icon-32.png`, `icon-48.pn
 
 ## License
 Choose a license (MIT recommended) and add `LICENSE` at the repository root.
+
+
+
+# P.S.
+(LnChatAI is your personal messaging assistant for LinkedIn.
+It analyzes your conversations, suggests replies, and helps you stay responsive — all without leaving LinkedIn.
+Whether you're networking or job hunting, LnChatAI keeps your chats fast, friendly, and on point.)

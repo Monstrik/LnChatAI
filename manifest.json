@@ -3,7 +3,6 @@
   "name": "LnChatAI - Smart AI Assistant for LinkedIn Messages",
   "version": "0.1.1",
   "description": "LnChatAI helps you write, reply, and manage your LinkedIn messages instantly using AI. Save time, sound professional, and stay connected effortlessly.",
-  "long_description": "LnChatAI is your personal messaging assistant for LinkedIn. It analyzes your conversations, suggests replies, and helps you stay responsive — all without leaving LinkedIn. Whether you're networking or job hunting, LnChatAI keeps your chats fast, friendly, and on point.",
   "permissions": [
     "storage",
     "scripting",
