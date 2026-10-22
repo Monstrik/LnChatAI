@@ -111,21 +111,24 @@ async function load() {
 
   qs('useAI').checked = !!cfg.useAI;
   qs('aiApiKey').value = cfg.aiApiKey || '';
+  qs('aiModel').value = cfg.aiModel || 'gpt-4o-mini';
   qs('autoSend').checked = !!cfg.autoSend;
 }
 
-async function save() {
-  const cfg = await getConfig();
+function collectConfigFromForm(baseConfig) {
+  const cfg = { ...baseConfig };
   cfg.locationKeywords = strToArr(qs('locationKeywords').value);
   cfg.jobDescKeywords = strToArr(qs('jobDescKeywords').value);
   cfg.salaryKeywords = strToArr(qs('salaryKeywords').value);
 
-  cfg.replies.locationFilter = qs('replyLocation').value.trim();
-  cfg.replies.salaryInquiry = qs('replySalary').value.trim();
-  cfg.replies.missingJobDesc = qs('replyMissing').value.trim();
-  cfg.replies.fallback = qs('replyFallback').value.trim();
+  cfg.replies = {
+    ...(cfg.replies || {}),
+    locationFilter: qs('replyLocation').value.trim(),
+    salaryInquiry: qs('replySalary').value.trim(),
+    missingJobDesc: qs('replyMissing').value.trim(),
+    fallback: qs('replyFallback').value.trim(),
+  };
 
-  // Collect templates from UI
   const titles = Array.from(document.querySelectorAll('.tpl-title'));
   const contents = Array.from(document.querySelectorAll('.tpl-content'));
   cfg.templates = titles.map((input, i) => ({
@@ -135,10 +138,86 @@ async function save() {
 
   cfg.useAI = qs('useAI').checked;
   cfg.aiApiKey = qs('aiApiKey').value.trim();
+  cfg.aiModel = qs('aiModel').value.trim() || 'gpt-4o-mini';
   cfg.autoSend = qs('autoSend').checked;
+
+  return cfg;
+}
+
+async function save() {
+  const cfg = collectConfigFromForm(await getConfig());
 
   await setConfig(cfg);
   setStatus('Saved');
+}
+
+async function testAIReply() {
+  const input = qs('aiTestInput')?.value.trim();
+  const output = qs('aiTestOutput');
+  if (!input) {
+    setStatus('Enter a test message first');
+    if (output) output.value = '';
+    return;
+  }
+
+  const cfg = collectConfigFromForm(await getConfig());
+  if (!cfg.useAI) {
+    setStatus('Enable AI first to run a live test');
+    if (output) {
+      output.value = [
+        'AI test did not run.',
+        'How to fix:',
+        '1) Open AI and Behavior tab',
+        '2) Turn on "Use AI to enhance proposed replies"',
+        '3) Click Save, then run the test again',
+      ].join('\n');
+    }
+    return;
+  }
+
+  if (!cfg.aiApiKey) {
+    setStatus('Missing API key');
+    if (output) {
+      output.value = [
+        'AI test did not run because no API key is set.',
+        'How to fix:',
+        '1) Create a key at https://platform.openai.com/api-keys',
+        '2) Paste it into AI API Key',
+        '3) Click Save, then run the test again',
+      ].join('\n');
+    }
+    return;
+  }
+
+  const button = qs('testAI');
+  if (button) button.disabled = true;
+  if (output) output.value = 'Generating...';
+
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: 'TEST_AI_REPLY',
+      text: input,
+      meta: 'Manual options test',
+      config: cfg,
+    });
+
+    if (!res?.ok) {
+      if (output) output.value = '';
+      setStatus(res?.error || 'AI test failed');
+      return;
+    }
+
+    if (output) output.value = res.proposal?.reply || '';
+    const mode = res.proposal?.rule === 'aiEnhanced'
+      ? `AI test OK (${res.proposal?.baseRule || 'fallback'})`
+      : `AI fallback to rules (${res.proposal?.rule || 'fallback'})`;
+    setStatus(mode);
+  } catch (_error) {
+    if (output) output.value = '';
+    setStatus('AI test failed');
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 async function resetDefaults() {
@@ -163,4 +242,6 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('reset').addEventListener('click', resetDefaults);
   const addBtn = document.getElementById('addTemplate');
   if (addBtn) addBtn.addEventListener('click', addTemplate);
+  const testAIBtn = document.getElementById('testAI');
+  if (testAIBtn) testAIBtn.addEventListener('click', testAIReply);
 });

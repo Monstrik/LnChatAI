@@ -6,6 +6,7 @@ LnChatAI helps you triage and reply to LinkedIn messages quickly. It reads the l
 - Shows message Meta and Content separately (extracted from the exact nodes you requested)
 - Two send flows: Approve & Send, or Run Rule & Send (no confirmation)
 - Optional Auto‑send for fully hands‑free replies
+- Optional AI-enhanced reply generation that uses your rules + saved templates
 - Dark mode UI with accessible colors
 - All keywords and reply texts are configurable in Options
 
@@ -57,7 +58,14 @@ Open Options via the popup link or by right‑clicking the extension icon → Op
 - Keywords: location, job description, salary
 - Replies: for each rule and the fallback
 - Behavior: Auto‑send on/off
-- AI placeholders: enable flag + API key field (AI is not invoked in this version)
+- AI: enable flag + API key + model name (default: `gpt-4o-mini`)
+- AI test box in Options to run a sample message before sending real replies
+
+When AI is enabled, LnChatAI:
+- Runs the normal rule engine first
+- Sends the selected rule, default reply, and relevant templates to the AI model
+- Uses the AI result as the final proposed reply
+- Falls back to the rule-based reply if the AI request fails or times out
 
 
 ## Architecture overview
@@ -74,6 +82,7 @@ This extension requests the minimum required for its features:
 - `storage` — save your configuration locally.
 - `activeTab`/`tabs` — communicate with the current LinkedIn tab to read messages and send replies.
 - `host_permissions` — `https://www.linkedin.com/*` so the content script can run on LinkedIn pages.
+- `host_permissions` — `https://api.openai.com/*` for AI reply generation (only when enabled).
 
 Note: If you frequently use `https://linkedin.com/*` (without `www`), consider adding it to `manifest.json` `host_permissions` and `content_scripts.matches`.
 
@@ -127,7 +136,8 @@ Stub icons are included in `icons/` as `icon-16.png`, `icon-32.png`, `icon-48.pn
 ## Privacy
 - Your LinkedIn page content is processed locally in the browser.
 - Configuration is stored in local extension storage.
-- No network calls are made by default. If you later enable an AI provider, your content may be sent to that provider according to your settings.
+- No AI network calls are made unless you enable AI and add an API key.
+- If AI is enabled, selected message content and rule/template context are sent to the configured OpenAI model.
 
 
 ## Roadmap (short)

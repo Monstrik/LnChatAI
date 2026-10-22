@@ -23,6 +23,14 @@ function setStatus(msg, ok=true) {
   el.className = ok ? 'small ok' : 'small err';
 }
 
+function formatRuleNote(proposal) {
+  if (!proposal) return 'Rule: -';
+  if (proposal.rule === 'aiEnhanced') {
+    return `Rule: ${proposal.baseRule || 'fallback'} + AI`;
+  }
+  return `Rule: ${proposal.rule}`;
+}
+
 let templatesCache = [];
 
 async function getActiveTabId() {
@@ -56,8 +64,8 @@ async function refreshFromPage() {
       const proposal = await chrome.runtime.sendMessage({ type: 'RUN_RULES_ON_TEXT', text: res.content || '', tabId });
       if (proposal?.ok) {
         qs('#reply').value = proposal.proposal.reply;
-        qs('#ruleNote').textContent = `Rule: ${proposal.proposal.rule}`;
-        setStatus('Proposed via rules', true);
+        qs('#ruleNote').textContent = formatRuleNote(proposal.proposal);
+        setStatus(proposal.proposal.rule === 'aiEnhanced' ? 'Proposed via AI' : 'Proposed via rules', true);
       } else {
         setStatus('Rules failed', false);
       }
@@ -80,7 +88,7 @@ async function loadLastProposal() {
     qs('#incomingMeta').value = meta;
     qs('#incomingContent').value = content;
     qs('#reply').value = res.data.proposal?.reply || '';
-    qs('#ruleNote').textContent = `Rule: ${res.data.proposal?.rule}`;
+    qs('#ruleNote').textContent = formatRuleNote(res.data.proposal);
     setStatus('Loaded last proposal');
   }
 }
@@ -108,8 +116,8 @@ async function runRules() {
   const res = await chrome.runtime.sendMessage({ type: 'RUN_RULES_ON_TEXT', text, tabId });
   if (res?.ok) {
     qs('#reply').value = res.proposal.reply || '';
-    qs('#ruleNote').textContent = `Rule: ${res.proposal.rule}`;
-    setStatus('Rules applied');
+    qs('#ruleNote').textContent = formatRuleNote(res.proposal);
+    setStatus(res.proposal.rule === 'aiEnhanced' ? 'AI reply prepared' : 'Rules applied');
   } else {
     setStatus('Failed to run rules', false);
   }
@@ -146,7 +154,10 @@ async function sendNowNoConfirm() {
     if (proposal?.ok) {
       const res = await chrome.runtime.sendMessage({ type: 'SEND_REPLY_NOW', text: proposal.proposal.reply, tabId });
       const ok = !!res?.ok;
-      setStatus(ok ? `Sent via rule: ${proposal.proposal.rule}` : 'Failed to send', ok);
+      const mode = proposal.proposal.rule === 'aiEnhanced'
+        ? `Sent via AI (${proposal.proposal.baseRule || 'fallback'})`
+        : `Sent via rule: ${proposal.proposal.rule}`;
+      setStatus(ok ? mode : 'Failed to send', ok);
       if (ok) {
         setTimeout(() => window.close(), 250);
       } else {

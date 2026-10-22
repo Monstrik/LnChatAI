@@ -75,12 +75,31 @@
       <div class="card-block">
         <h2>AI and Behavior</h2>
         <div class="form-group checkbox-group">
-          <label><input type="checkbox" id="useAI" /> Use AI model when rules don't match</label>
+          <label><input type="checkbox" id="useAI" /> Use AI to enhance proposed replies</label>
         </div>
         <div class="form-group">
           <label for="aiApiKey">AI API Key</label>
           <input id="aiApiKey" type="text" placeholder="sk-..." />
-          <div class="small">AI is optional; not invoked by default in this version.</div>
+        </div>
+        <div class="form-group">
+          <label for="aiModel">AI Model</label>
+          <input id="aiModel" type="text" placeholder="gpt-4o-mini" />
+          <div class="small">When AI is enabled, the model uses your rules and templates to draft the final reply.</div>
+        </div>
+
+        <div class="small ai-help-text">
+          Need an API key? Create one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">platform.openai.com/api-keys</a>.
+          Keep your key private, and revoke/regenerate it immediately if it is ever exposed.
+        </div>
+
+        <div class="form-group ai-test-box">
+          <label for="aiTestInput">AI Test Message</label>
+          <textarea id="aiTestInput" placeholder="Hi, we have a remote backend role. Can you share your expected compensation?"></textarea>
+          <div class="row ai-test-actions">
+            <button id="testAI" type="button" class="btn-test-ai">Test AI Reply</button>
+          </div>
+          <label for="aiTestOutput">AI Test Output</label>
+          <textarea id="aiTestOutput" readonly placeholder="AI output will appear here..."></textarea>
         </div>
 
         <h3>Behavior</h3>

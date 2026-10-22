@@ -29,4 +29,5 @@ export const DEFAULT_CONFIG = {
   autoSend: false,
   useAI: false,
   aiApiKey: "",
+  aiModel: "gpt-4o-mini",
 };

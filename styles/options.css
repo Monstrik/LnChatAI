@@ -125,6 +125,25 @@ textarea {
   margin-top: 8px;
 }
 
+.ai-test-box {
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+
+.ai-help-text {
+  margin: 2px 0 10px;
+  line-height: 1.4;
+}
+
+#aiTestInput,
+#aiTestOutput {
+  min-height: 74px;
+}
+
+.ai-test-actions {
+  margin: 8px 0;
+}
+
 .actions {
   margin-top: 14px;
   display: flex;
@@ -180,10 +199,23 @@ textarea {
   filter: none;
 }
 
+.btn-test-ai {
+  background: #2f6fdb;
+  border-color: #2f6fdb;
+  color: #ffffff;
+}
+
+.btn-test-ai:hover {
+  background: #2059b7;
+  border-color: #2059b7;
+  filter: none;
+}
+
 .btn-primary:focus-visible,
 .btn-danger:focus-visible,
 .btn-add-template:focus-visible,
-.btn-template-remove:focus-visible {
+.btn-template-remove:focus-visible,
+.btn-test-ai:focus-visible {
   outline: 2px solid #70b5f9;
   outline-offset: 2px;
 }
