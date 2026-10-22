@@ -42,21 +42,49 @@ function evaluateRules(text, config) {
 }
 
 // Last proposal cache per tabId
-const lastProposals = new Map(); // tabId -> { messageText, proposal, timestamp }
+const lastProposals = new Map(); // tabId -> { messageMeta, messageContent, proposal, timestamp }
+const PROPOSAL_TTL_MS = 5 * 60 * 1000;
+const MAX_PROPOSALS = 100;
 
+function cleanupProposals(now = Date.now()) {
+  for (const [key, value] of lastProposals.entries()) {
+    if (!value?.timestamp || now - value.timestamp > PROPOSAL_TTL_MS) {
+      lastProposals.delete(key);
+    }
+  }
 
-console.log("My EXT init");
+  if (lastProposals.size <= MAX_PROPOSALS) return;
+
+  const sortedByAge = Array.from(lastProposals.entries())
+    .sort((a, b) => (a[1]?.timestamp || 0) - (b[1]?.timestamp || 0));
+
+  const toTrim = sortedByAge.length - MAX_PROPOSALS;
+  for (let i = 0; i < toTrim; i++) {
+    lastProposals.delete(sortedByAge[i][0]);
+  }
+}
+
+function normalizeIncomingMessage(msg) {
+  return {
+    meta: msg.meta || "",
+    content: msg.content || msg.text || "",
+  };
+}
 
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     const tabId = sender.tab?.id || msg.tabId;
-    console.log('[LIM]', msg.type);
+    cleanupProposals();
 
     if (msg.type === "NEW_INCOMING_MESSAGE") {
+      if (!tabId) {
+        sendResponse({ ok: false, error: "Missing tabId" });
+        return;
+      }
+
       const config = await getConfig();
-      const meta = msg.meta || "";
-      const content = msg.content || msg.text || ""; // fallback to text for backward compatibility
+      const { meta, content } = normalizeIncomingMessage(msg);
       const proposal = evaluateRules(content, config);
       lastProposals.set(tabId, {
         messageMeta: meta,
@@ -84,7 +112,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const config = await getConfig();
       const proposal = evaluateRules(msg.text || "", config);
       if (tabId) {
-        lastProposals.set(tabId, { messageText: msg.text || "", proposal, timestamp: Date.now() });
+        lastProposals.set(tabId, {
+          messageMeta: "",
+          messageContent: msg.text || "",
+          proposal,
+          timestamp: Date.now(),
+        });
       }
       sendResponse({ ok: true, proposal });
       return;

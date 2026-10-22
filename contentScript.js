@@ -1,10 +1,36 @@
 // contentScript.js - runs on LinkedIn messaging pages (full thread and mini overlay)
 
 (function () {
-    const DEBUG = true; // flip to true to see logs in page console
+    const DEBUG = false; // flip to true to see logs in page console
     const log = (...args) => {
         if (DEBUG) console.debug('[LIM]', ...args);
     };
+    const reportError = (context, error) => {
+        if (DEBUG) console.debug('[LIM]', context, error);
+    };
+
+    const MESSAGE_SELECTORS = [
+        '[data-qa="message-row"]',
+        'li.msg-s-message-list__event',
+        '.msg-s-message-list__event',
+        '.msg-s-message-group__container',
+        '.msg-overlay-message-bubble',
+    ].join(', ');
+
+    const COMPOSER_SELECTORS = [
+        'div.msg-form__contenteditable[contenteditable="true"]',
+        'div[role="textbox"].msg-form__contenteditable',
+        '.msg-overlay-conversation-bubble div[role="textbox"][contenteditable="true"]',
+        '[data-test-conversation-compose-box] [contenteditable="true"]',
+        'div[contenteditable="true"][data-placeholder]',
+    ].join(', ');
+
+    const SEND_BUTTON_SELECTORS = [
+        'button.msg-form__send-button',
+        'button[aria-label="Send"]',
+        '.msg-overlay-conversation-bubble button[aria-label="Send"]',
+        'form.msg-form__form button[type="submit"]',
+    ].join(', ');
 
     const state = {
         lastSeenMessageId: null,
@@ -62,7 +88,7 @@
         const root = findActiveConversationRoot();
         if (!root) return null;
         // Common LinkedIn selectors for message items (full + overlay)
-        const candidates = root.querySelectorAll('[data-qa="message-row"], li.msg-s-message-list__event, .msg-s-message-list__event, .msg-s-message-group__container, .msg-overlay-message-bubble');
+        const candidates = root.querySelectorAll(MESSAGE_SELECTORS);
         if (!candidates.length) return null;
         return candidates[candidates.length - 1];
     }
@@ -101,7 +127,8 @@
     const observer = new MutationObserver(() => {
         try {
             reportLatestIncoming();
-        } catch (e) { /* ignore */
+        } catch (e) {
+            reportError('reportLatestIncoming failed', e);
         }
     });
 
@@ -127,7 +154,7 @@
     async function sendReply(text) {
         const scope = findActiveComposerRoot();
         // Find composer contenteditable (full + overlay)
-        const editable = scope.querySelector('div.msg-form__contenteditable[contenteditable="true"], div[role="textbox"].msg-form__contenteditable, .msg-overlay-conversation-bubble div[role="textbox"][contenteditable="true"], [data-test-conversation-compose-box] [contenteditable="true"], div[contenteditable="true"][data-placeholder]');
+        const editable = scope.querySelector(COMPOSER_SELECTORS);
         if (!editable) throw new Error('Composer not found');
 
         // Helpers
@@ -147,8 +174,8 @@
         sel.addRange(range);
 
         // Clear existing content ONLY via editing commands/events (avoid innerHTML to not fight React/Draft)
-        try { document.execCommand('selectAll', false, null); } catch (e) {}
-        try { document.execCommand('delete', false, null); } catch (e) {}
+        try { document.execCommand('selectAll', false, null); } catch (e) { reportError('selectAll failed', e); }
+        try { document.execCommand('delete', false, null); } catch (e) { reportError('delete failed', e); }
         // Some builds need a small delay for placeholder/state to settle
         await wait(20);
 
@@ -161,14 +188,14 @@
                 try {
                     const ok = document.execCommand('insertText', false, part);
                     usedExec = usedExec || ok;
-                } catch (e) {}
+                } catch (e) { reportError('insertText failed', e); }
             }
             if (i < chunks.length - 1) {
                 // new line
                 try {
                     const okNL = document.execCommand('insertParagraph');
                     usedExec = usedExec || okNL;
-                } catch (e) {}
+                } catch (e) { reportError('insertParagraph failed', e); }
             }
             await wait(0); // yield to event loop
         }
@@ -178,7 +205,7 @@
             const data = text;
             try {
                 editable.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, data, inputType: 'insertFromPaste' }));
-            } catch (e) {}
+            } catch (e) { reportError('beforeinput dispatch failed', e); }
             try {
                 editable.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, data, inputType: 'insertFromPaste' }));
             } catch (e) {
@@ -198,13 +225,13 @@
         if (!currentText) {
             // Retry once by re-focusing and re-inserting with execCommand only
             editable.focus();
-            try { document.execCommand('insertText', false, text); } catch (e) {}
+            try { document.execCommand('insertText', false, text); } catch (e) { reportError('retry insertText failed', e); }
             editable.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, data: text, inputType: 'insertText' }));
             await wait(80);
         }
 
         // Find a visible Send button
-        let sendBtn = Array.from(scope.querySelectorAll('button.msg-form__send-button, button[aria-label="Send"], .msg-overlay-conversation-bubble button[aria-label="Send"], form.msg-form__form button[type="submit"]'))
+        let sendBtn = Array.from(scope.querySelectorAll(SEND_BUTTON_SELECTORS))
             .filter(isVisible)
             .pop() || null;
         if (!sendBtn) throw new Error('Send button not found');

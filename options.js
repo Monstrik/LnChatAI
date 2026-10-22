@@ -24,10 +24,7 @@ function renderTemplates(templates) {
   const list = Array.isArray(templates) ? templates : [];
   list.forEach((t, idx) => {
     const wrap = document.createElement('div');
-    wrap.style.border = '1px solid var(--border)';
-    wrap.style.padding = '8px';
-    wrap.style.borderRadius = '6px';
-    wrap.style.marginTop = '8px';
+    wrap.className = 'template-item';
 
     const titleLabel = document.createElement('label');
     titleLabel.textContent = 'Title';
@@ -39,18 +36,17 @@ function renderTemplates(templates) {
 
     const contentLabel = document.createElement('label');
     contentLabel.textContent = 'Content';
-    contentLabel.style.marginTop = '6px';
+    contentLabel.className = 'template-content-label';
     const contentArea = document.createElement('textarea');
     contentArea.value = t.content || '';
     contentArea.dataset.idx = idx;
     contentArea.className = 'tpl-content';
 
     const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.gap = '8px';
-    row.style.marginTop = '6px';
+    row.className = 'template-actions';
     const removeBtn = document.createElement('button');
     removeBtn.textContent = 'Remove';
+    removeBtn.className = 'btn-template-remove';
     removeBtn.addEventListener('click', async () => {
       const cfg = await getConfig();
       const arr = Array.isArray(cfg.templates) ? cfg.templates.slice() : [];
@@ -105,11 +101,10 @@ async function save() {
   // Collect templates from UI
   const titles = Array.from(document.querySelectorAll('.tpl-title'));
   const contents = Array.from(document.querySelectorAll('.tpl-content'));
-  const templates = titles.map((input, i) => ({
+  cfg.templates = titles.map((input, i) => ({
     title: input.value.trim(),
     content: (contents[i]?.value || '').trim(),
   })).filter(t => t.title || t.content);
-  cfg.templates = templates;
 
   cfg.useAI = qs('useAI').checked;
   cfg.aiApiKey = qs('aiApiKey').value.trim();

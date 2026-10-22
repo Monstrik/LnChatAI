@@ -96,3 +96,22 @@ button { max-width: 100%; }
 
 /* make template select use full row width for stability */
 #templateSelect { width: 100%; }
+
+/* Highlight primary action with LinkedIn brand blue */
+#approveSend {
+  background: #0a66c2;
+  border-color: #0a66c2;
+  color: #ffffff;
+}
+
+#approveSend:hover {
+  background: #004182;
+  border-color: #004182;
+  filter: none;
+}
+
+#approveSend:focus-visible {
+  outline: 2px solid #70b5f9;
+  outline-offset: 2px;
+}
+

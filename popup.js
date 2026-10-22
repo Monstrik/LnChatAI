@@ -2,6 +2,21 @@
 
 function qs(sel) { return document.querySelector(sel); }
 
+async function getConfig() {
+  const res = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
+  return res?.config || {};
+}
+
+async function setConfig(config) {
+  await chrome.runtime.sendMessage({ type: 'SET_CONFIG', config });
+}
+
+function toggleSendButtons(disabled) {
+  [qs('#approveSend'), qs('#sendNow')].filter(Boolean).forEach((btn) => {
+    btn.disabled = disabled;
+  });
+}
+
 function setStatus(msg, ok=true) {
   const el = qs('#status');
   el.textContent = msg || '';
@@ -71,8 +86,7 @@ async function loadLastProposal() {
 }
 
 async function loadConfig() {
-  const res = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
-  const cfg = res?.config;
+  const cfg = await getConfig();
   if (cfg) {
     qs('#autoSendToggle').checked = !!cfg.autoSend;
     templatesCache = Array.isArray(cfg.templates) ? cfg.templates : [];
@@ -81,10 +95,9 @@ async function loadConfig() {
 }
 
 async function saveAutoSend(v) {
-  const res = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
-  const cfg = res?.config || {};
+  const cfg = await getConfig();
   cfg.autoSend = v;
-  await chrome.runtime.sendMessage({ type: 'SET_CONFIG', config: cfg });
+  await setConfig(cfg);
   setStatus(v ? 'Auto-send enabled' : 'Auto-send disabled');
 }
 
@@ -106,8 +119,7 @@ async function approveAndSend() {
   const tabId = await getActiveTabId();
   const text = qs('#reply').value.trim();
   if (!text) return setStatus('Reply is empty', false);
-  const btns = [qs('#approveSend'), qs('#sendNow')].filter(Boolean);
-  btns.forEach(b => b.disabled = true);
+  toggleSendButtons(true);
   try {
     const res = await chrome.runtime.sendMessage({ type: 'SEND_REPLY_NOW', text, tabId });
     const ok = !!res?.ok;
@@ -115,11 +127,11 @@ async function approveAndSend() {
     if (ok) {
       setTimeout(() => window.close(), 250);
     } else {
-      btns.forEach(b => b.disabled = false);
+      toggleSendButtons(false);
     }
   } catch (e) {
     setStatus('Failed to send', false);
-    btns.forEach(b => b.disabled = false);
+    toggleSendButtons(false);
   }
 }
 
@@ -128,8 +140,7 @@ async function sendNowNoConfirm() {
   const tabId = await getActiveTabId();
   const incoming = qs('#incomingContent').value.trim();
   if (!incoming) return setStatus('No message content to process', false);
-  const btns = [qs('#approveSend'), qs('#sendNow')].filter(Boolean);
-  btns.forEach(b => b.disabled = true);
+  toggleSendButtons(true);
   try {
     const proposal = await chrome.runtime.sendMessage({ type: 'RUN_RULES_ON_TEXT', text: incoming, tabId });
     if (proposal?.ok) {
@@ -139,15 +150,15 @@ async function sendNowNoConfirm() {
       if (ok) {
         setTimeout(() => window.close(), 250);
       } else {
-        btns.forEach(b => b.disabled = false);
+        toggleSendButtons(false);
       }
     } else {
       setStatus('Rules failed', false);
-      btns.forEach(b => b.disabled = false);
+      toggleSendButtons(false);
     }
   } catch (e) {
     setStatus('Failed to send', false);
-    btns.forEach(b => b.disabled = false);
+    toggleSendButtons(false);
   }
 }
 
