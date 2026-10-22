@@ -10,56 +10,68 @@
   <h1>LinkedIn Auto-Responder — Options</h1>
   <p class="small page-intro">Configure matching rules, saved replies, and send behavior.</p>
 
-  <section class="panel-section">
-    <h2>Rules Configuration</h2>
-    <div class="row two-col">
-      <div class="card-block">
-      <h2>Keywords</h2>
-        <div class="form-group">
-          <label for="locationKeywords">Location Keywords (comma separated)</label>
-          <input id="locationKeywords" type="text" placeholder="new york, nyc, remote" />
-        </div>
-        <div class="form-group">
-          <label for="jobDescKeywords">Job Description Keywords (comma separated)</label>
-          <input id="jobDescKeywords" type="text" placeholder="position, role, responsibility, requirement, job" />
-        </div>
-        <div class="form-group">
-          <label for="salaryKeywords">Salary Keywords (comma separated)</label>
-          <input id="salaryKeywords" type="text" placeholder="salary, range, compensation, pay, rate" />
-        </div>
-      </div>
+  <div class="tabs" role="tablist" aria-label="Options sections">
+    <button type="button" id="rulesTabBtn" class="tab-btn is-active" role="tab" aria-selected="true" aria-controls="rulesTab" data-tab="rulesTab">Rules</button>
+    <button type="button" id="templatesTabBtn" class="tab-btn" role="tab" aria-selected="false" aria-controls="templatesTab" data-tab="templatesTab">Templates</button>
+    <button type="button" id="advancedTabBtn" class="tab-btn" role="tab" aria-selected="false" aria-controls="advancedTab" data-tab="advancedTab">AI and Behavior</button>
+  </div>
 
-      <div class="card-block">
-        <h2>Replies</h2>
-        <div class="form-group">
-          <label for="replyLocation">Location Filter Reply</label>
-          <textarea id="replyLocation" placeholder="NYC or REMOTE only."></textarea>
+  <section id="rulesTab" class="tab-panel is-active" role="tabpanel" aria-labelledby="rulesTabBtn">
+    <div class="panel-section">
+      <h2>Rules Configuration</h2>
+      <div class="row two-col">
+        <div class="card-block">
+        <h2>Keywords</h2>
+          <div class="form-group">
+            <label for="locationKeywords">Location Keywords (comma separated)</label>
+            <input id="locationKeywords" type="text" placeholder="new york, nyc, remote" />
+          </div>
+          <div class="form-group">
+            <label for="jobDescKeywords">Job Description Keywords (comma separated)</label>
+            <input id="jobDescKeywords" type="text" placeholder="position, role, responsibility, requirement, job" />
+          </div>
+          <div class="form-group">
+            <label for="salaryKeywords">Salary Keywords (comma separated)</label>
+            <input id="salaryKeywords" type="text" placeholder="salary, range, compensation, pay, rate" />
+          </div>
         </div>
-        <div class="form-group">
-          <label for="replySalary">Salary Inquiry Reply</label>
-          <textarea id="replySalary" placeholder="What is the salary range?"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="replyMissing">Missing Job Description Reply</label>
-          <textarea id="replyMissing" placeholder="Please share the job description and salary range."></textarea>
-        </div>
-        <div class="form-group">
-          <label for="replyFallback">Fallback Reply</label>
-          <textarea id="replyFallback" placeholder="Thanks for reaching out... "></textarea>
+
+        <div class="card-block">
+          <h2>Replies</h2>
+          <div class="form-group">
+            <label for="replyLocation">Location Filter Reply</label>
+            <textarea id="replyLocation" placeholder="NYC or REMOTE only."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="replySalary">Salary Inquiry Reply</label>
+            <textarea id="replySalary" placeholder="What is the salary range?"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="replyMissing">Missing Job Description Reply</label>
+            <textarea id="replyMissing" placeholder="Please share the job description and salary range."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="replyFallback">Fallback Reply</label>
+            <textarea id="replyFallback" placeholder="Thanks for reaching out... "></textarea>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="panel-section">
-    <div class="row two-col">
+  <section id="templatesTab" class="tab-panel" role="tabpanel" aria-labelledby="templatesTabBtn" hidden>
+    <div class="panel-section">
       <div class="card-block">
-      <h2>Templates</h2>
-      <div class="small">Create reusable reply templates with title and content. These appear in the popup for quick insertion.</div>
-      <div id="templates"></div>
-      <button id="addTemplate" class="btn-add-template">Add Template</button>
+        <h2>Templates</h2>
+        <div class="small">Create reusable reply templates with title and content. These appear in the popup for quick insertion.</div>
+        <div id="templates"></div>
+        <button id="addTemplate" class="btn-add-template">Add Template</button>
       </div>
+    </div>
+  </section>
 
+  <section id="advancedTab" class="tab-panel" role="tabpanel" aria-labelledby="advancedTabBtn" hidden>
+    <div class="panel-section">
       <div class="card-block">
         <h2>AI and Behavior</h2>
         <div class="form-group checkbox-group">

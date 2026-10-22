@@ -5,6 +5,33 @@ import { DEFAULT_CONFIG } from './constants.js';
 function qs(id) { return document.getElementById(id); }
 function setStatus(msg) { document.getElementById('status').textContent = msg || ''; }
 
+function initTabs() {
+  const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
+  const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
+  if (!tabButtons.length || !tabPanels.length) return;
+
+  function setActive(tabId) {
+    tabButtons.forEach((btn) => {
+      const isActive = btn.dataset.tab === tabId;
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    tabPanels.forEach((panel) => {
+      const isActive = panel.id === tabId;
+      panel.hidden = !isActive;
+      panel.classList.toggle('is-active', isActive);
+    });
+  }
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => setActive(btn.dataset.tab));
+  });
+
+  const initial = tabButtons.find((btn) => btn.classList.contains('is-active'));
+  setActive(initial?.dataset.tab || tabButtons[0].dataset.tab);
+}
+
 async function getConfig() {
   const res = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
   return res?.config ? { ...DEFAULT_CONFIG, ...res.config } : DEFAULT_CONFIG;
@@ -130,6 +157,7 @@ async function addTemplate() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  initTabs();
   load();
   document.getElementById('save').addEventListener('click', save);
   document.getElementById('reset').addEventListener('click', resetDefaults);
