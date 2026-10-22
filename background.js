@@ -15,8 +15,8 @@ async function setConfig(config) {
 
 // Simple rules engine
 function evaluateRules(text, config) {
-  const t = text.toLowerCase();
-  const has = (arr) => arr.some((k) => t.includes(k));
+  const t = String(text || "").toLowerCase();
+  const has = (arr) => (arr || []).some((k) => t.includes(String(k).toLowerCase()));
 
   const hasLocation = has(config.locationKeywords);
   const hasJobDesc = has(config.jobDescKeywords);
@@ -27,14 +27,14 @@ function evaluateRules(text, config) {
     return { rule: "locationFilter", reply: config.replies.locationFilter };
   }
 
-  // Rule 2: Salary Inquiry when JD exists but no salary
-  if (hasJobDesc && !hasSalary) {
-    return { rule: "salaryInquiry", reply: config.replies.salaryInquiry };
-  }
-
-  // Rule 3: Missing Job Description
+  // Rule 2: Missing Job Description
   if (!hasJobDesc) {
     return { rule: "missingJobDesc", reply: config.replies.missingJobDesc };
+  }
+
+  // Rule 3: Salary Inquiry when JD exists but no salary
+  if (!hasSalary) {
+    return { rule: "salaryInquiry", reply: config.replies.salaryInquiry };
   }
 
   // Fallback or AI
