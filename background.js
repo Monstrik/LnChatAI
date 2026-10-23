@@ -13,6 +13,25 @@ async function setConfig(config) {
   await chrome.storage.local.set({ config });
 }
 
+async function safeSendToTab(tabId, payload) {
+  if (!tabId) {
+    return { ok: false, error: "Missing tabId" };
+  }
+
+  try {
+    await chrome.tabs.get(tabId);
+  } catch (_error) {
+    return { ok: false, error: "Tab is no longer available" };
+  }
+
+  try {
+    await chrome.tabs.sendMessage(tabId, payload);
+    return { ok: true };
+  } catch (_error) {
+    return { ok: false, error: "Cannot reach LinkedIn page. Refresh the tab and try again." };
+  }
+}
+
 // Simple rules engine
 function evaluateRules(text, config) {
   const t = String(text || "").toLowerCase();
@@ -79,6 +98,24 @@ function sanitizeReply(text, fallback) {
     .replace(/```$/i, "")
     .trim();
   return cleaned || fallback;
+}
+
+function describeAIError(error) {
+  if (error?.name === "AbortError") {
+    return "AI timeout after 15s";
+  }
+
+  const raw = String(error?.message || "AI request failed");
+  const match = raw.match(/AI HTTP\s+(\d{3})/);
+  if (match) {
+    const status = Number(match[1]);
+    if (status === 401) return "AI auth failed (check API key)";
+    if (status === 429) return "AI rate-limited (try again shortly)";
+    if (status >= 500) return "AI provider is temporarily unavailable";
+    return `AI request failed (${status})`;
+  }
+
+  return raw;
 }
 
 async function requestAIReply({ content, meta, baseProposal, config }) {
@@ -156,8 +193,12 @@ async function buildProposal({ content, meta, config }) {
       reply: aiReply,
       source: "ai",
     };
-  } catch (_error) {
-    return { ...baseProposal, source: "rules" };
+  } catch (error) {
+    return {
+      ...baseProposal,
+      source: "rules",
+      aiError: describeAIError(error),
+    };
   }
 }
 
@@ -165,6 +206,24 @@ async function buildProposal({ content, meta, config }) {
 const lastProposals = new Map(); // tabId -> { messageMeta, messageContent, proposal, timestamp }
 const PROPOSAL_TTL_MS = 5 * 60 * 1000;
 const MAX_PROPOSALS = 100;
+
+async function loadProposalSnapshot() {
+  const data = await chrome.storage.local.get(["lastProposalsSnapshot"]);
+  const snapshot = data?.lastProposalsSnapshot;
+  if (!snapshot || typeof snapshot !== "object") return;
+
+  Object.entries(snapshot).forEach(([tabId, entry]) => {
+    const id = Number(tabId);
+    if (!Number.isInteger(id) || !entry || typeof entry !== "object") return;
+    lastProposals.set(id, entry);
+  });
+}
+
+async function persistProposalSnapshot() {
+  await chrome.storage.local.set({ lastProposalsSnapshot: Object.fromEntries(lastProposals) });
+}
+
+const proposalsReady = loadProposalSnapshot().catch(() => undefined);
 
 function cleanupProposals(now = Date.now()) {
   for (const [key, value] of lastProposals.entries()) {
@@ -205,6 +264,7 @@ function mergeConfig(override = {}) {
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
+    await proposalsReady;
     const tabId = sender.tab?.id || msg.tabId;
     cleanupProposals();
 
@@ -223,11 +283,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         proposal,
         timestamp: Date.now(),
       });
-      await chrome.storage.local.set({ lastProposalsSnapshot: Object.fromEntries(lastProposals) });
+      await persistProposalSnapshot();
 
       // Auto-send if enabled
       if (config.autoSend) {
-        chrome.tabs.sendMessage(tabId, { type: "SEND_REPLY", text: proposal.reply });
+        const sent = await safeSendToTab(tabId, { type: "SEND_REPLY", text: proposal.reply });
+        if (!sent.ok) {
+          sendResponse({ ok: false, proposal, error: sent.error });
+          return;
+        }
       }
       sendResponse({ ok: true, proposal });
       return;
@@ -253,6 +317,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           proposal,
           timestamp: Date.now(),
         });
+        await persistProposalSnapshot();
       }
       sendResponse({ ok: true, proposal });
       return;
@@ -271,8 +336,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     if (msg.type === "SEND_REPLY_NOW") {
       if (tabId && msg.text) {
-        chrome.tabs.sendMessage(tabId, { type: "SEND_REPLY", text: msg.text });
-        sendResponse({ ok: true });
+        const sent = await safeSendToTab(tabId, { type: "SEND_REPLY", text: msg.text });
+        sendResponse(sent.ok ? { ok: true } : { ok: false, error: sent.error });
       } else {
         sendResponse({ ok: false, error: "Missing tabId or text" });
       }

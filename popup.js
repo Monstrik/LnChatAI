@@ -31,6 +31,13 @@ function formatRuleNote(proposal) {
   return `Rule: ${proposal.rule}`;
 }
 
+function getProposalStatus(proposal) {
+  if (!proposal) return { message: 'Rules applied', ok: true };
+  if (proposal.rule === 'aiEnhanced') return { message: 'AI reply prepared', ok: true };
+  if (proposal.aiError) return { message: `AI unavailable: ${proposal.aiError}. Using rules reply.`, ok: false };
+  return { message: 'Rules applied', ok: true };
+}
+
 let templatesCache = [];
 
 async function getActiveTabId() {
@@ -65,7 +72,8 @@ async function refreshFromPage() {
       if (proposal?.ok) {
         qs('#reply').value = proposal.proposal.reply;
         qs('#ruleNote').textContent = formatRuleNote(proposal.proposal);
-        setStatus(proposal.proposal.rule === 'aiEnhanced' ? 'Proposed via AI' : 'Proposed via rules', true);
+        const status = getProposalStatus(proposal.proposal);
+        setStatus(status.message, status.ok);
       } else {
         setStatus('Rules failed', false);
       }
@@ -117,7 +125,8 @@ async function runRules() {
   if (res?.ok) {
     qs('#reply').value = res.proposal.reply || '';
     qs('#ruleNote').textContent = formatRuleNote(res.proposal);
-    setStatus(res.proposal.rule === 'aiEnhanced' ? 'AI reply prepared' : 'Rules applied');
+    const status = getProposalStatus(res.proposal);
+    setStatus(status.message, status.ok);
   } else {
     setStatus('Failed to run rules', false);
   }
@@ -131,7 +140,7 @@ async function approveAndSend() {
   try {
     const res = await chrome.runtime.sendMessage({ type: 'SEND_REPLY_NOW', text, tabId });
     const ok = !!res?.ok;
-    setStatus(ok ? 'Sent' : 'Failed to send', ok);
+    setStatus(ok ? 'Sent' : (res?.error || 'Failed to send'), ok);
     if (ok) {
       setTimeout(() => window.close(), 250);
     } else {
@@ -157,7 +166,7 @@ async function sendNowNoConfirm() {
       const mode = proposal.proposal.rule === 'aiEnhanced'
         ? `Sent via AI (${proposal.proposal.baseRule || 'fallback'})`
         : `Sent via rule: ${proposal.proposal.rule}`;
-      setStatus(ok ? mode : 'Failed to send', ok);
+      setStatus(ok ? mode : (res?.error || 'Failed to send'), ok);
       if (ok) {
         setTimeout(() => window.close(), 250);
       } else {

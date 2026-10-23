@@ -3,7 +3,11 @@
 import { DEFAULT_CONFIG } from './constants.js';
 
 function qs(id) { return document.getElementById(id); }
-function setStatus(msg) { document.getElementById('status').textContent = msg || ''; }
+function setStatus(msg, ok = true) {
+  const el = document.getElementById('status');
+  el.textContent = msg || '';
+  el.className = ok ? 'small ok' : 'small err';
+}
 
 function initTabs() {
   const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
@@ -155,14 +159,14 @@ async function testAIReply() {
   const input = qs('aiTestInput')?.value.trim();
   const output = qs('aiTestOutput');
   if (!input) {
-    setStatus('Enter a test message first');
+    setStatus('Enter a test message first', false);
     if (output) output.value = '';
     return;
   }
 
   const cfg = collectConfigFromForm(await getConfig());
   if (!cfg.useAI) {
-    setStatus('Enable AI first to run a live test');
+    setStatus('Enable AI first to run a live test', false);
     if (output) {
       output.value = [
         'AI test did not run.',
@@ -176,7 +180,7 @@ async function testAIReply() {
   }
 
   if (!cfg.aiApiKey) {
-    setStatus('Missing API key');
+    setStatus('Missing API key', false);
     if (output) {
       output.value = [
         'AI test did not run because no API key is set.',
@@ -203,7 +207,7 @@ async function testAIReply() {
 
     if (!res?.ok) {
       if (output) output.value = '';
-      setStatus(res?.error || 'AI test failed');
+      setStatus(res?.error || 'AI test failed', false);
       return;
     }
 
@@ -211,10 +215,14 @@ async function testAIReply() {
     const mode = res.proposal?.rule === 'aiEnhanced'
       ? `AI test OK (${res.proposal?.baseRule || 'fallback'})`
       : `AI fallback to rules (${res.proposal?.rule || 'fallback'})`;
-    setStatus(mode);
+    if (res.proposal?.aiError) {
+      setStatus(`AI fallback: ${res.proposal.aiError}`, false);
+    } else {
+      setStatus(mode);
+    }
   } catch (_error) {
     if (output) output.value = '';
-    setStatus('AI test failed');
+    setStatus('AI test failed', false);
   } finally {
     if (button) button.disabled = false;
   }
