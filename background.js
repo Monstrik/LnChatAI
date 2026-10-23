@@ -206,6 +206,8 @@ async function buildProposal({ content, meta, config }) {
 const lastProposals = new Map(); // tabId -> { messageMeta, messageContent, proposal, timestamp }
 const PROPOSAL_TTL_MS = 5 * 60 * 1000;
 const MAX_PROPOSALS = 100;
+const AI_TEST_COOLDOWN_MS = 2000;
+let lastAITestAt = 0;
 
 async function loadProposalSnapshot() {
   const data = await chrome.storage.local.get(["lastProposalsSnapshot"]);
@@ -324,6 +326,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     if (msg.type === "TEST_AI_REPLY") {
+      const now = Date.now();
+      const waitMs = AI_TEST_COOLDOWN_MS - (now - lastAITestAt);
+      if (waitMs > 0) {
+        sendResponse({ ok: false, error: `Please wait ${Math.ceil(waitMs / 1000)}s before testing again.` });
+        return;
+      }
+      lastAITestAt = now;
+
       const config = mergeConfig(msg.config || (await getConfig()));
       const proposal = await buildProposal({
         content: msg.text || "",

@@ -81,11 +81,8 @@ When AI is enabled, LnChatAI:
 This extension requests the minimum required for its features:
 - `storage` — save your configuration locally.
 - `activeTab`/`tabs` — communicate with the current LinkedIn tab to read messages and send replies.
-- `host_permissions` — `https://www.linkedin.com/*` so the content script can run on LinkedIn pages.
+- `host_permissions` — `https://www.linkedin.com/*` and `https://linkedin.com/*` so the content script can run on both URL variants.
 - `host_permissions` — `https://api.openai.com/*` for AI reply generation (only when enabled).
-
-Note: If you frequently use `https://linkedin.com/*` (without `www`), consider adding it to `manifest.json` `host_permissions` and `content_scripts.matches`.
-
 
 ## Testing and debugging
 ### Fast rules testing (no LinkedIn DOM)
@@ -142,9 +139,22 @@ Stub icons are included in `icons/` as `icon-16.png`, `icon-32.png`, `icon-48.pn
 
 ## Roadmap (short)
 - Optional manual theme selector (Light / Dark / System)
-- Host match for `https://linkedin.com/*` (no `www`)
 - Unit tests for the rules engine (`evaluateRules`) and CI checks
 - Optional debug toggle in Options to avoid editing source
+
+
+## Release checklist
+Before publishing or sharing a build:
+1. Reload extension in `chrome://extensions` after pulling latest changes.
+2. Open Options and verify AI settings (API key + model), then click **Save**.
+3. Run **Test AI Reply** once and confirm output appears.
+4. Verify popup flow on a live LinkedIn thread:
+   - Refresh
+   - Run Rules
+   - Approve & Send
+5. Check both LinkedIn URL variants:
+   - `https://www.linkedin.com/...`
+   - `https://linkedin.com/...`
 
 
 ## License
