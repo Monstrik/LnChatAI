@@ -9,21 +9,25 @@
 <body>
 
   <div class="row title-line">
+    <label for="incomingMeta" class="sr-only">Message metadata</label>
     <img src="icons/icon-32.png" height="32" width="32" alt="IA"/>
     <input type="text" id="incomingMeta" readonly placeholder="Message sender, time." />
   </div>
 
   <div class="section">
+    <label for="incomingContent" class="sr-only">Incoming message content</label>
     <textarea id="incomingContent" readonly placeholder="Message..."></textarea>
   </div>
   <hr/>
   <div class="section">
     <div class="label">Reply</div>
     <div class="row" style="margin-bottom:6px; align-items:center;">
+      <label for="templateSelect" class="sr-only">Reply template selector</label>
       <select id="templateSelect">
         <option value="">Choose template…</option>
       </select>
     </div>
+    <label for="reply" class="sr-only">Reply message</label>
     <textarea id="reply"></textarea>
     <div class="small" id="ruleNote"></div>
   </div>
