@@ -9,6 +9,12 @@ function setStatus(msg, ok = true) {
   el.className = ok ? 'small ok' : 'small err';
 }
 
+function setAiLastError(msg) {
+  const el = qs('aiLastError');
+  if (!el) return;
+  el.textContent = msg || '';
+}
+
 function initTabs() {
   const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
   const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
@@ -160,6 +166,7 @@ async function testAIReply() {
   const output = qs('aiTestOutput');
   if (!input) {
     setStatus('Enter a test message first', false);
+    setAiLastError('');
     if (output) output.value = '';
     return;
   }
@@ -167,6 +174,7 @@ async function testAIReply() {
   const cfg = collectConfigFromForm(await getConfig());
   if (!cfg.useAI) {
     setStatus('Enable AI first to run a live test', false);
+    setAiLastError('');
     if (output) {
       output.value = [
         'AI test did not run.',
@@ -181,6 +189,7 @@ async function testAIReply() {
 
   if (!cfg.aiApiKey) {
     setStatus('Missing API key', false);
+    setAiLastError('');
     if (output) {
       output.value = [
         'AI test did not run because no API key is set.',
@@ -207,6 +216,7 @@ async function testAIReply() {
 
     if (!res?.ok) {
       if (output) output.value = '';
+      setAiLastError('');
       setStatus(res?.error || 'AI test failed', false);
       return;
     }
@@ -216,12 +226,15 @@ async function testAIReply() {
       ? `AI test OK (${res.proposal?.baseRule || 'fallback'})`
       : `AI fallback to rules (${res.proposal?.rule || 'fallback'})`;
     if (res.proposal?.aiError) {
+      setAiLastError(`Last AI error: ${res.proposal.aiError}`);
       setStatus(`AI fallback: ${res.proposal.aiError}`, false);
     } else {
+      setAiLastError('');
       setStatus(mode);
     }
   } catch (_error) {
     if (output) output.value = '';
+    setAiLastError('');
     setStatus('AI test failed', false);
   } finally {
     if (button) button.disabled = false;

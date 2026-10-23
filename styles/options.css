@@ -144,6 +144,12 @@ textarea {
   margin: 8px 0;
 }
 
+#aiLastError {
+  margin-top: 6px;
+  min-height: 14px;
+  color: var(--err);
+}
+
 .actions {
   margin-top: 14px;
   display: flex;

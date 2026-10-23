@@ -23,6 +23,12 @@ function setStatus(msg, ok=true) {
   el.className = ok ? 'small ok' : 'small err';
 }
 
+function setAiErrorNote(msg) {
+  const el = qs('#aiErrorNote');
+  if (!el) return;
+  el.textContent = msg || '';
+}
+
 function formatRuleNote(proposal) {
   if (!proposal) return 'Rule: -';
   if (proposal.rule === 'aiEnhanced') {
@@ -36,6 +42,14 @@ function getProposalStatus(proposal) {
   if (proposal.rule === 'aiEnhanced') return { message: 'AI reply prepared', ok: true };
   if (proposal.aiError) return { message: `AI unavailable: ${proposal.aiError}. Using rules reply.`, ok: false };
   return { message: 'Rules applied', ok: true };
+}
+
+function syncAiErrorNote(proposal) {
+  if (proposal?.aiError) {
+    setAiErrorNote(`AI note: ${proposal.aiError}`);
+    return;
+  }
+  setAiErrorNote('');
 }
 
 let templatesCache = [];
@@ -72,9 +86,11 @@ async function refreshFromPage() {
       if (proposal?.ok) {
         qs('#reply').value = proposal.proposal.reply;
         qs('#ruleNote').textContent = formatRuleNote(proposal.proposal);
+        syncAiErrorNote(proposal.proposal);
         const status = getProposalStatus(proposal.proposal);
         setStatus(status.message, status.ok);
       } else {
+        setAiErrorNote('');
         setStatus('Rules failed', false);
       }
     } else {
@@ -97,6 +113,7 @@ async function loadLastProposal() {
     qs('#incomingContent').value = content;
     qs('#reply').value = res.data.proposal?.reply || '';
     qs('#ruleNote').textContent = formatRuleNote(res.data.proposal);
+    syncAiErrorNote(res.data.proposal);
     setStatus('Loaded last proposal');
   }
 }
@@ -125,9 +142,11 @@ async function runRules() {
   if (res?.ok) {
     qs('#reply').value = res.proposal.reply || '';
     qs('#ruleNote').textContent = formatRuleNote(res.proposal);
+    syncAiErrorNote(res.proposal);
     const status = getProposalStatus(res.proposal);
     setStatus(status.message, status.ok);
   } else {
+    setAiErrorNote('');
     setStatus('Failed to run rules', false);
   }
 }
